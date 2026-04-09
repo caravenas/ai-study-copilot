@@ -1,0 +1,23 @@
+from packages.rag_core.src.retrieval.retriever import retrieve_documents
+from packages.rag_core.src.prompts.answer_prompt import build_answer_prompt
+from packages.rag_core.src.synthesis.answer_builder import build_answer_response
+from packages.rag_core.src.llm.client import generate_answer
+
+def answer_question(question: str, module: str | None = None, top_k: int = 4) -> dict:
+    # TODO: add module filtering support in retriever
+    docs = retrieve_documents(question=question, top_k=top_k)
+
+    if not docs:
+        return build_answer_response(
+            answer="No encontré información suficiente en los documentos para responder a esta pregunta.",
+            docs=[],
+        )
+
+    prompt = build_answer_prompt(question=question, docs=docs)
+    llm_answer = generate_answer(prompt)
+
+    return build_answer_response(llm_answer, docs)
+        
+    
+    
+
