@@ -15,9 +15,9 @@ class CitationItem(BaseModel):
     
 
 class RelatedLab(BaseModel):
-    title: str
     source_file: str
-    section: Optional[str] = None
+    topics: list[str]
+    preview: str
     
 
 class QueryResponse(BaseModel):

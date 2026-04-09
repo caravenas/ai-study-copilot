@@ -2,6 +2,9 @@ from packages.rag_core.src.retrieval.retriever import retrieve_documents
 from packages.rag_core.src.prompts.answer_prompt import build_answer_prompt
 from packages.rag_core.src.synthesis.answer_builder import build_answer_response
 from packages.rag_core.src.llm.client import generate_answer
+from packages.rag_core.src.vectorstore.chroma_store import get_notebook_chunks
+
+from packages.rag_core.src.linking.lab_linker import find_related_labs
 
 def answer_question(question: str, module: str | None = None, top_k: int = 4) -> dict:
     # TODO: add module filtering support in retriever
@@ -16,7 +19,13 @@ def answer_question(question: str, module: str | None = None, top_k: int = 4) ->
     prompt = build_answer_prompt(question=question, docs=docs)
     llm_answer = generate_answer(prompt)
 
-    return build_answer_response(llm_answer, docs)
+    notebook_docs = get_notebook_chunks()
+    related_labs = find_related_labs(docs, notebook_docs)
+
+    response = build_answer_response(llm_answer, docs)
+    response["related_labs"] = related_labs
+
+    return response
         
     
     
