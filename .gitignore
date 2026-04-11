@@ -73,3 +73,8 @@ build/
 
 # Vercel
 .vercel
+
+# Agent
+.gemini/
+AGENT.md
+Plan.md
