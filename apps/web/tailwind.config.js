@@ -72,8 +72,17 @@ module.exports = {
         "label": ["Inter", "sans-serif"],
         "manrope": ["Manrope", "sans-serif"],
         "inter": ["Inter", "sans-serif"],
-      }
+      },
+      keyframes: {
+        fadeSlideUp: {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "fade-slide-up": "fadeSlideUp 0.3s ease",
+      },
     },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/typography")],
 }
