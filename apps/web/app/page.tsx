@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { queryApi, QueryResponse, CitationItem, RelatedLab } from "@/lib/api";
+import remarkGfm from "remark-gfm";
+
 
 // Strip <think>...</think> blocks from LLM responses (model reasoning traces)
 function stripThinkTags(text: string): string {
@@ -61,7 +63,9 @@ function AssistantBubble({ msg }: { msg: Message }) {
             prose-strong:text-on-surface prose-strong:font-semibold
             prose-ul:my-2 prose-li:my-0.5
             prose-p:my-2">
-            <ReactMarkdown>{stripThinkTags(msg.content)}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {stripThinkTags(msg.content)}
+            </ReactMarkdown>
           </div>
 
           {/* Confidence badge */}
@@ -79,8 +83,8 @@ function AssistantBubble({ msg }: { msg: Message }) {
                       msg.confidence >= 0.7
                         ? "#2e7d32"
                         : msg.confidence >= 0.4
-                        ? "#ed6c02"
-                        : "#d32f2f",
+                          ? "#ed6c02"
+                          : "#d32f2f",
                   }}
                 />
               </div>
@@ -284,7 +288,7 @@ export default function ChatView() {
   return (
     <>
       {/* Chat Canvas */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 scroll-smooth pb-40">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 scroll-smooth pb-70">
         {messages.length === 0 && !isLoading ? (
           <EmptyState />
         ) : (

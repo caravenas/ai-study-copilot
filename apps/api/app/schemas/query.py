@@ -4,6 +4,7 @@ from typing import List, Optional
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=3)
     module: Optional[str] = None
+    difficulty: Optional[str] = None
     top_k: int = Field(default=5, ge=1, le=10)
     
     

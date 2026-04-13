@@ -1,7 +1,11 @@
 import os
 import chromadb
+from pathlib import Path
 
-CHROMA_PATH = os.getenv("CHROMA_PATH", "./data/indexes/chroma")
+BASE_DIR = Path(__file__).resolve().parents[4]
+DEFAULT_CHROMA_PATH = str(BASE_DIR / "data" / "indexes" / "chroma")
+
+CHROMA_PATH = os.getenv("CHROMA_PATH", DEFAULT_CHROMA_PATH)
 COLLECTION_NAME = "study_materials"
 
 client = chromadb.PersistentClient(path=CHROMA_PATH)
@@ -37,12 +41,16 @@ def add_chunks(chunks: list[dict], embeddings: list[list[float]]) -> None:
         embeddings=embeddings,
     )
 
-def search_chunks(query_embedding: list[float], top_k: int = 4) -> list[dict]:
-    result = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        include=["documents", "metadatas"],
-    )
+def search_chunks(query_embedding: list[float], top_k: int = 4, where: dict | None = None) -> list[dict]:
+    query_kwargs = {
+        "query_embeddings": [query_embedding],
+        "n_results": top_k,
+        "include": ["documents", "metadatas"],
+    }
+
+    if where:
+        query_kwargs["where"] = where
+    result = collection.query(**query_kwargs)
 
     docs = []
     ids = result["ids"][0]

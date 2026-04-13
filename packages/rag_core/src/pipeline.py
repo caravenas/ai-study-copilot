@@ -5,10 +5,12 @@ from packages.rag_core.src.llm.client import generate_answer
 from packages.rag_core.src.vectorstore.chroma_store import get_notebook_chunks
 
 from packages.rag_core.src.linking.lab_linker import find_related_labs
+from packages.rag_core.src.retrieval.filters import build_where_filter
 
-def answer_question(question: str, module: str | None = None, top_k: int = 4) -> dict:
-    # TODO: add module filtering support in retriever
-    docs = retrieve_documents(question=question, top_k=top_k)
+
+def answer_question(question: str, module: str | None = None, difficulty: str | None = None, top_k: int = 4) -> dict:
+    where_filter = build_where_filter(module=module, difficulty=difficulty)
+    docs = retrieve_documents(question=question, top_k=top_k, where_filter=where_filter)
 
     if not docs:
         return build_answer_response(
