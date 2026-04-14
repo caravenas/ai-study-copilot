@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { queryApi, QueryResponse, CitationItem, RelatedLab } from "@/lib/api";
+import { studyApi, QueryResponse, CitationItem, RelatedLab } from "@/lib/api";
 import remarkGfm from "remark-gfm";
 
 
@@ -212,6 +212,7 @@ function EmptyState() {
 export default function ChatView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [level, setLevel] = useState<"básico" | "intermedio" | "avanzado">("intermedio");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -250,7 +251,7 @@ export default function ChatView() {
     setIsLoading(true);
 
     try {
-      const data: QueryResponse = await queryApi({ question });
+      const data: QueryResponse = await studyApi({ question, level });
 
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
@@ -288,7 +289,7 @@ export default function ChatView() {
   return (
     <>
       {/* Chat Canvas */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 scroll-smooth pb-70">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 scroll-smooth pb-12">
         {messages.length === 0 && !isLoading ? (
           <EmptyState />
         ) : (
@@ -303,6 +304,9 @@ export default function ChatView() {
             {isLoading && <ThinkingIndicator />}
           </>
         )}
+        
+        {/* Spacer at the bottom to prevent content from being hidden by the fixed chat input area */}
+        <div className="h-48 w-full flex-shrink-0 pointer-events-none" />
 
         {/* Error toast */}
         {error && (
@@ -333,18 +337,34 @@ export default function ChatView() {
             </button>
             <textarea
               ref={textareaRef}
-              className="flex-1 bg-transparent border-none focus:ring-0 py-3 text-on-surface placeholder:text-outline-variant font-body resize-none outline-none"
-              placeholder="Ask Study Copilot anything..."
+              className="flex-1 bg-transparent border-none focus:ring-0 py-4 text-on-surface placeholder:text-outline-variant font-body resize-none outline-none text-base"
+              placeholder="Pregunta a Study Copilot..."
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             />
+            
+            {/* Level Selector */}
+            <div className="relative flex-shrink-0 self-center hidden sm:block">
+              <select 
+                value={level} 
+                onChange={(e) => setLevel(e.target.value as any)}
+                className="appearance-none bg-surface-container-high hover:bg-surface-container-highest cursor-pointer text-xs font-bold font-label uppercase tracking-widest text-on-surface-variant px-4 py-2.5 rounded-full border border-transparent outline-none transition-colors"
+                disabled={isLoading}
+              >
+                <option value="básico">Nivel Básico</option>
+                <option value="intermedio">Intermedio</option>
+                <option value="avanzado">Avanzado</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[14px] pointer-events-none text-on-surface-variant">expand_more</span>
+            </div>
+
             <button
               onClick={() => handleSubmit()}
               disabled={isLoading || !input.trim()}
-              className="bg-primary p-3 rounded-2xl text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100"
+              className="bg-primary p-4 rounded-2xl text-white shadow-lg shadow-primary/20 hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-40 disabled:hover:translate-y-0 ml-1"
             >
               <span className="material-symbols-outlined">
                 {isLoading ? "hourglass_top" : "send"}

@@ -98,9 +98,17 @@ function SourceCard({ source }: { source: SourceItem }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-on-surface truncate">{basename(source.source_file)}</p>
-        <p className="text-[11px] text-on-surface-variant">
-          {source.source_type.toUpperCase()} • {source.chunks_count} chunks
-        </p>
+        <div className="flex gap-2 items-center text-[11px] text-on-surface-variant font-medium mt-1 uppercase font-label tracking-widest">
+          <span className="font-bold">{source.source_type}</span>
+          <span className="text-outline-variant font-light">•</span>
+          <span>{source.chunk_count} fragmentos de memoria</span>
+          {source.module && (
+            <>
+              <span className="text-outline-variant font-light">•</span>
+              <span className="bg-secondary/10 text-secondary px-2 py-0.5 rounded shadow-sm">{source.module}</span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -124,7 +132,7 @@ export default function AdminView() {
     setLoadingSources(true);
     try {
       const data = await fetchSources();
-      setSources(data);
+      setSources(data.sources);
     } catch {
       // silently fail — sources section will show empty
     } finally {
@@ -212,9 +220,9 @@ export default function AdminView() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Upload Section */}
-        <section className="bg-surface-container-lowest rounded-[2rem] p-10 border border-outline-variant/10 shadow-[0_4px_20px_rgba(42,52,57,0.04)] font-body">
+        <section className="bg-surface-container-lowest rounded-[2rem] p-8 md:p-10 border border-outline-variant/10 shadow-[0_4px_20px_rgba(42,52,57,0.04)] font-body flex flex-col max-h-[calc(100vh-220px)] h-full">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 rounded-2xl bg-primary-fixed text-primary-fixed-dim flex items-center justify-center">
               <span
@@ -274,8 +282,8 @@ export default function AdminView() {
 
           {/* Upload queue */}
           {files.length > 0 && (
-            <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="mt-6 flex flex-col min-h-0 flex-1">
+              <div className="flex items-center justify-between shrink-0 mb-3">
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest font-label">
                   Upload Queue
                 </span>
@@ -285,16 +293,18 @@ export default function AdminView() {
                   </span>
                 )}
               </div>
-              {files.map((item, i) => (
-                <UploadItem key={`${item.file.name}-${i}`} {...item} />
-              ))}
+              <div className="space-y-3 overflow-y-auto pr-2 flex-1">
+                {files.map((item, i) => (
+                  <UploadItem key={`${item.file.name}-${i}`} {...item} />
+                ))}
+              </div>
             </div>
           )}
         </section>
 
         {/* Sources Section */}
-        <section className="bg-surface-container-lowest rounded-[2rem] p-10 border border-outline-variant/10 shadow-[0_4px_20px_rgba(42,52,57,0.04)] font-body flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+        <section className="bg-surface-container-lowest rounded-[2rem] p-8 md:p-10 border border-outline-variant/10 shadow-[0_4px_20px_rgba(42,52,57,0.04)] font-body flex flex-col max-h-[calc(100vh-220px)] h-full">
+          <div className="flex items-center justify-between mb-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center">
                 <span
@@ -322,7 +332,7 @@ export default function AdminView() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 overflow-y-auto pr-2 min-h-0">
             {loadingSources ? (
               <div className="flex items-center justify-center py-12 text-on-surface-variant">
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mr-3" />
@@ -349,10 +359,10 @@ export default function AdminView() {
 
           {/* Stats bar */}
           {sources.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-outline-variant/10 flex items-center gap-6">
+            <div className="mt-6 pt-6 border-t border-outline-variant/10 flex items-center gap-6 shrink-0">
               <div>
                 <p className="text-2xl font-bold text-on-surface font-headline">
-                  {sources.reduce((sum, s) => sum + s.chunks_count, 0)}
+                  {sources.reduce((sum, s) => sum + s.chunk_count, 0)}
                 </p>
                 <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest font-label">
                   Total Chunks

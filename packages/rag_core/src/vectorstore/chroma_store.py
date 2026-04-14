@@ -90,3 +90,46 @@ def get_notebook_chunks() -> list[dict]:
         docs.append(entry)
 
     return docs
+
+def get_sources_summary() -> list[dict]:
+    """Devuelve un listado de todas las fuentes indexadas únicas y su conteo de chunks."""
+    # Obtenemos TODOS los metadatos directamente del índice vectorial
+    result = collection.get(include=["metadatas"])
+    metadatas = result["metadatas"]
+    
+    sources = {}
+    for m in metadatas:
+        src = m.get("source_file", "Desconocido")
+        if src not in sources:
+            sources[src] = {
+                "source_file": src,
+                "source_type": m.get("source_type", ""),
+                "module": m.get("module", ""),
+                "chunk_count": 0
+            }
+        sources[src]["chunk_count"] += 1
+    
+    return list(sources.values())
+
+def get_module_chunks(module_slug: str) -> list[dict]:
+    """Retrieve all chunks matching exactly a specific module."""
+    result = collection.get(
+        where={"module": module_slug},
+        include=["documents", "metadatas"]
+    )
+    
+    docs = []
+    if not result["ids"]:
+        return docs
+        
+    for chunk_id, doc, meta in zip(result["ids"], result["documents"], result["metadatas"]):
+        entry = {
+            "chunk_id": chunk_id,
+            "content": doc,
+            **meta,
+        }
+        docs.append(entry)
+    return docs
+
+
+    
