@@ -12,7 +12,7 @@ from packages.rag_core.src.graph.nodes import (
     handle_no_context # nuevo para Corrective RAG (CRAG)
 )
 
-MAX_RETRIEVAL_ATTEMPTS = 1
+MAX_RETRIEVAL_ATTEMPTS = 2
 
 def route_by_intent(state: StudyState) -> str:
     """Función de routing: decide qué agente usar según el intent."""

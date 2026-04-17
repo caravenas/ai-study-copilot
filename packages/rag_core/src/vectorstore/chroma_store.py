@@ -34,7 +34,7 @@ def add_chunks(chunks: list[dict], embeddings: list[list[float]]) -> None:
     documents = [c["content"] for c in chunks]
     metadatas = [_build_metadata(c) for c in chunks]
 
-    collection.add(
+    collection.upsert(
         ids=ids,
         documents=documents,
         metadatas=metadatas,
@@ -42,9 +42,13 @@ def add_chunks(chunks: list[dict], embeddings: list[list[float]]) -> None:
     )
 
 def search_chunks(query_embedding: list[float], top_k: int = 4, where: dict | None = None) -> list[dict]:
+    count = collection.count()
+    if count == 0:
+        return []
+
     query_kwargs = {
         "query_embeddings": [query_embedding],
-        "n_results": top_k,
+        "n_results": min(top_k, count),
         "include": ["documents", "metadatas"],
     }
 

@@ -26,11 +26,13 @@ Pregunta: {question}"""
 GRADER_PROMPT = """Eres un evaluador de relevancia para un sistema RAG.
 
 Dado el siguiente contexto recuperado y la pregunta del estudiante, determina si el contexto
-contiene información suficiente para responder correctamente.
+contiene información relacionada con el tema, aunque sea de forma parcial.
 
 Responde ÚNICAMENTE con una de estas palabras:
-- relevante → si el contexto responde directamente a la pregunta
-- irrelevante → si el contexto no tiene relación o es insuficiente
+- relevante → si el contexto tiene información relacionada con el tema preguntado (aunque sea parcial)
+- irrelevante → si el contexto es completamente ajeno al tema preguntado
+
+En caso de duda, responde: relevante
 
 PREGUNTA: {question}
 
@@ -95,20 +97,25 @@ def synthesize_response(state: StudyState) -> dict:
     return response
 
 def grade_documents(state: StudyState) -> dict:
-    # Heurística: si hay 3+ docs con contenido suficiente, saltamos el LLM
-    if len(state["docs"]) >= 3 and all(len(d["content"]) > 100 for d in state["docs"]):
-        return {
-            "docs_relevant": True,
-            "retrieval_attempts": state.get("retrieval_attempts", 0),
-        }
+    docs = state["docs"]
+    attempts = state.get("retrieval_attempts", 0)
 
-    # Solo llamamos al LLM cuando los docs son escasos o muy cortos
-    context = "\n\n".join(d["content"] for d in state["docs"])
+    # Sin docs: irrelevante de inmediato
+    if not docs:
+        return {"docs_relevant": False, "retrieval_attempts": attempts}
+
+    # Heurística: 3+ docs con contenido sustancial → aceptar sin llamar al LLM
+    substantial = [d for d in docs if len(d["content"]) > 100]
+    if len(substantial) >= 3:
+        return {"docs_relevant": True, "retrieval_attempts": attempts}
+
+    # LLM grader para casos con pocos docs o contenido mixto
+    context = "\n\n".join(d["content"] for d in docs)
     prompt = GRADER_PROMPT.format(question=state["question"], context=context)
     raw = generate_answer(prompt).strip().lower()
     return {
-        "docs_relevant": raw == "relevante",
-        "retrieval_attempts": state.get("retrieval_attempts", 0),
+        "docs_relevant": "irrelevante" not in raw,
+        "retrieval_attempts": attempts,
     }
 
 
