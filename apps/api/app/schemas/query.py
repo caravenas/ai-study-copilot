@@ -21,8 +21,16 @@ class RelatedLab(BaseModel):
     preview: str
     
 
+class QuizItem(BaseModel):
+    question: str
+    options: List[str]
+    correct: str
+    explanation: str
+
+
 class QueryResponse(BaseModel):
     answer: str
     citations: List[CitationItem]
     related_labs: List[RelatedLab] = []
     confidence: float
+    quiz_items: List[QuizItem] = []
