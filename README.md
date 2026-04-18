@@ -1,81 +1,183 @@
 # AI Study Copilot
 
-**AI Study Copilot** es una plataforma avanzada de aprendizaje asistido por Inteligencia Artificial diseñada para transformar material educativo denso (PDFs, Jupyter Notebooks) en experiencias de estudio interactivas y personalizadas. 
+Sistema RAG pedagógico que conecta PDFs de clases y Jupyter Notebooks de un diplomado en IA. Expone tutoría adaptativa por nivel, quizzes y respuestas con citas *grounded* sobre el material del curso.
 
-El sistema utiliza arquitecturas de **RAG (Retrieval-Augmented Generation)** y flujos de trabajo agentes basados en **LangGraph** para ofrecer respuestas fundamentadas, tutoría adaptativa y generación automática de material de estudio.
-
----
-
-## Características Principales
-
-* **Ingesta Multi-formato:** Procesamiento inteligente de archivos PDF y Jupyter Notebooks (`.ipynb`), extrayendo estructura, código y contexto técnico.
-* **RAG de Alta Precisión:** Implementación de recuperación avanzada con *embeddings* vectoriales y técnicas de *re-ranking* para asegurar respuestas precisas y libres de alucinaciones.
-* **Tutoría con Estado (Stateful):** Uso de **LangGraph** para gestionar sesiones de estudio que mantienen la memoria del progreso del usuario y permiten flujos de tutoría dinámicos.
-* **Framework de Evaluación:** Módulo dedicado para medir la calidad del *retrieval* y la fidelidad de las respuestas, asegurando una mejora continua del sistema.
-* **Interfaz Moderna:** Dashboard intuitivo construido con **Next.js** para una navegación fluida entre fuentes de consulta y modos de estudio.
+**Stack:** FastAPI · LangChain · LangGraph · ChromaDB · OpenAI embeddings · MiniMax chat LLM · Next.js 14 (App Router) · Tailwind
 
 ---
 
-## Arquitectura del Sistema
+## Estructura del monorepo
 
-El proyecto está organizado como un **Monorepo**, garantizando una separación clara de responsabilidades y facilitando el escalado de cada componente.
-
-### Estructura de Carpetas
-
-* **`apps/api`**: Backend robusto construido con **FastAPI**. Implementa una arquitectura modular dividida en rutas, esquemas y servicios.
-* **`apps/web`**: Frontend moderno en **Next.js (App Router)**, diseñado para ofrecer una experiencia de usuario rápida y reactiva.
-* **`packages/ingestion`**: Pipeline especializado en la transformación de archivos crudos en *chunks* de datos enriquecidos.
-* **`packages/rag_core`**: El núcleo del sistema. Contiene la lógica de *embeddings*, almacenes vectoriales, prompts y los grafos de estudio.
-* **`packages/evals`**: Herramientas de evaluación para auditar la calidad de la IA de forma explícita.
-* **`packages/shared`**: Modelos de datos y constantes compartidas entre el backend y los pipelines de datos.
-
----
-
-## Stack Tecnológico
-
-* **Lenguaje:** Python 3.10+ & TypeScript.
-* **IA/ML:** LangChain, LangGraph, PyTorch (para procesamiento de modelos).
-* **Base de Datos:** ChromaDB / pgvector (Vector Stores).
-* **Backend:** FastAPI.
-* **Frontend:** React, Next.js, Tailwind CSS.
-* **Infraestructura:** Docker & Docker Compose.
-
----
-
-## Organización del Repositorio
-
-```bash
+```
 ai-study-copilot/
-├── apps/               # Aplicaciones desplegables (API y Web)
-├── packages/           # Librerías de lógica de negocio (RAG, Ingesta, Evals)
-├── data/               # Almacenamiento de documentos (Raw, Processed, Indexes)
-├── scripts/            # Scripts de utilidad (Ingesta masiva, tests de humo)
-└── docs/               # Documentación detallada de arquitectura y decisiones
+├── apps/
+│   ├── api/                 # FastAPI backend (app/main.py)
+│   └── web/                 # Next.js 14 frontend
+├── packages/
+│   ├── rag_core/            # retrieval, embeddings, LLM, prompts, grafo
+│   ├── ingestion/           # parsers PDF/notebook, chunking, metadata
+│   ├── evals/               # evaluación de retrieval y respuestas
+│   └── shared/              # schemas y constantes compartidas
+├── data/
+│   ├── raw/{pdfs,notebooks} # fuentes originales (gitignored)
+│   ├── processed/           # chunks procesados
+│   └── indexes/chroma/      # índice vectorial persistido
+├── scripts/                 # utilidades (ingesta, smoke test, rebuild)
+├── docs/                    # documentación y ADRs
+├── docker-compose.yml
+└── Makefile
 ```
 
-## Guía de Inicio Rápido
-1. Clonar el repositorio:
+Los imports del backend resuelven `packages.*` agregando la raíz del repo a `sys.path` desde `apps/api/app/main.py`. No uses `pip install -e .` para los paquetes internos.
+
+---
+
+## Requisitos previos
+
+| Herramienta | Versión mínima | Notas |
+|-------------|----------------|-------|
+| Python      | 3.12           | Probado con 3.12.1 |
+| Node.js     | 18.17+         | Requerido por Next.js 14 |
+| npm         | 9+             | Viene con Node |
+| OpenAI API key | —           | Para embeddings `text-embedding-3-small` |
+| MiniMax API key | —          | Para el chat LLM `MiniMax-M2.7` |
+
+ChromaDB corre en modo embebido (persistencia en disco bajo `data/indexes/chroma`). No requiere servicio externo.
+
+---
+
+## Setup paso a paso
+
+### 1. Clonar y entrar al repo
 
 ```bash
-git clone [https://github.com/tu-usuario/ai-study-copilot.git](https://github.com/tu-usuario/ai-study-copilot.git)
+git clone <url-del-repo> ai-study-copilot
 cd ai-study-copilot
 ```
 
-2. Configurar variables de entorno:
+### 2. Variables de entorno
 
-```Bash
+```bash
 cp .env.example .env
-# Configura tus llaves de API y credenciales de base de datos
+# Edita .env y completa OPENAI_API_KEY y MINIMAX_API_KEY
 ```
 
-3. Levantar el entorno de desarrollo:
+`apps/api/app/core/config.py` carga `.env` desde la raíz del monorepo automáticamente.
+
+### 3. Backend (Python)
 
 ```bash
-docker-compose up --build
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-4. Ejecutar la ingesta inicial:
-Coloca tus archivos en data/raw/ y ejecuta:
+### 4. Frontend (Next.js)
 
 ```bash
-python scripts/ingest_all.py
+cd apps/web
+npm install
+cd ../..
+```
+
+### 5. Colocar material de estudio
+
+```
+data/raw/pdfs/         # PDFs de clases
+data/raw/notebooks/    # Jupyter notebooks (.ipynb)
+```
+
+El directorio `data/` está en `.gitignore`; cada desarrollador trae su propio material.
+
+### 6. Ingestar y construir el índice vectorial
+
+La API expone el endpoint de ingesta. Con el backend corriendo (ver paso 7):
+
+```bash
+curl -X POST http://localhost:8000/api/ingest
+```
+
+Esto parsea PDFs + notebooks, genera chunks con metadatos, calcula embeddings y persiste el índice Chroma en `data/indexes/chroma`.
+
+> Los scripts en `scripts/` (`ingest_all.py`, `rebuild_index.py`, `smoke_test.py`) son stubs en este momento. Usa el endpoint `/api/ingest` como fuente de verdad.
+
+---
+
+## Correr en desarrollo
+
+Con `.venv` activo y desde la raíz del repo:
+
+```bash
+# Backend (http://localhost:8000, docs en /docs)
+make run-api
+
+# Frontend (http://localhost:3000)
+make run-web
+```
+
+Equivalentes sin Make:
+
+```bash
+cd apps/api && uvicorn app.main:app --reload --port 8000
+cd apps/web && npm run dev
+```
+
+---
+
+## Endpoints principales
+
+| Método | Ruta           | Propósito                                  |
+|--------|----------------|--------------------------------------------|
+| GET    | `/api/health`  | Health check                               |
+| POST   | `/api/ingest`  | Ingesta de PDFs y notebooks                |
+| POST   | `/api/query`   | Pregunta RAG con citas y labs relacionados |
+| POST   | `/api/study`   | Explicación adaptada por nivel / resumen   |
+| POST   | `/api/eval`    | Evaluación de respuestas (WIP)             |
+
+Documentación interactiva: `http://localhost:8000/docs`.
+
+---
+
+## Tests
+
+```bash
+make test-api
+# equivalente: cd apps/api && pytest
+```
+
+Los tests viven en `apps/api/tests/` y `packages/*/tests/`.
+
+---
+
+## Docker
+
+Con el `.env` configurado en la raíz:
+
+```bash
+docker compose up --build
+```
+
+- `api` → `http://localhost:8000`
+- `web` → `http://localhost:3000`
+- El índice Chroma persiste en `./data/indexes/chroma` (volumen montado).
+
+Para la ingesta en este modo, tras levantar los servicios:
+
+```bash
+# Copia PDFs/notebooks a ./data/raw/ antes o durante la ejecución
+curl -X POST http://localhost:8000/api/ingest
+```
+
+---
+
+## Problemas conocidos
+
+- `packages/rag_core/src/prompts/coder_prompt.py` está incompleto; el modo `coder_agent` del grafo LangGraph aún no es funcional end-to-end.
+- La API usa el pipeline directo (`packages.rag_core.src.pipeline`) — el grafo LangGraph todavía no está enganchado al router.
+
+---
+
+## Idioma
+
+Todo el sistema (prompts, UI, documentación) está en **español**. Mantén ese contrato al contribuir nuevos prompts o copy.
