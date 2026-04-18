@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/", icon: "chat_bubble", label: "Current Chat" },
-  { href: "/history", icon: "history", label: "History" },
+  { href: "/", icon: "chat_bubble", label: "Chat actual" },
+  { href: "/history", icon: "history", label: "Historial" },
   { href: "/study", icon: "style", label: "Flashcards" },
-  { href: "/explorer", icon: "menu_book", label: "Resources" },
+  { href: "/explorer", icon: "menu_book", label: "Recursos" },
 ];
 
 export default function SideNav() {

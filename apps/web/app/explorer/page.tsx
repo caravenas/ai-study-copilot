@@ -2,68 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { fetchSources, SourceItem } from "@/lib/api";
-
-// ─── Helpers ─────────────────────────────────────────────────────────
-
-function basename(path: string): string {
-  return path.split("/").pop() || path;
-}
+import { MaterialIcon } from "@/components/shared/MaterialIcon";
+import { SourceCard } from "@/components/sources/SourceCard";
 
 // ─── Sub-components ──────────────────────────────────────────────────
-
-function SourceCard({ source }: { source: SourceItem }) {
-  const isPdf = source.source_type === "pdf";
-
-  return (
-    <div className="bg-surface-container-lowest rounded-[1rem] p-6 shadow-[0_4px_20px_rgba(42,52,57,0.04)] border border-outline-variant/20 hover:border-primary/30 transition-all cursor-default flex flex-col group font-body">
-      <div className="flex items-start gap-4">
-        <div
-          className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform ${
-            isPdf
-              ? "bg-error-container/20 text-error"
-              : "bg-primary-container/50 text-on-primary-container"
-          }`}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            {isPdf ? "picture_as_pdf" : "code_blocks"}
-          </span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-on-surface text-[15px] leading-snug mb-1 group-hover:text-primary transition-colors truncate">
-            {basename(source.source_file)}
-          </h3>
-          <p className="text-xs text-outline-variant font-medium">
-            {isPdf ? "PDF Document" : "Jupyter Notebook"} • {source.chunk_count} chunks
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 flex gap-2 flex-wrap font-label">
-        <span
-          className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-            isPdf
-              ? "bg-error-container/20 text-error"
-              : "bg-primary-container/40 text-on-primary-container"
-          }`}
-        >
-          {isPdf ? "PDF" : "Notebook"}
-        </span>
-        {source.module && (
-          <span className="px-2 py-1 bg-secondary/10 text-secondary text-[10px] font-bold uppercase tracking-wider rounded-md">
-            {source.module}
-          </span>
-        )}
-        <span className="px-2 py-1 bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded-md">
-          {source.chunk_count} chunks
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function SectionHeader({
   icon,
@@ -81,12 +23,7 @@ function SectionHeader({
   return (
     <div className="flex items-center gap-3 mb-4">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${bgClass}`}>
-        <span
-          className={`material-symbols-outlined text-lg ${colorClass}`}
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {icon}
-        </span>
+        <MaterialIcon name={icon} filled className={`text-lg ${colorClass}`} />
       </div>
       <h2 className="text-base font-bold text-on-surface font-headline">{label}</h2>
       <span className="ml-auto text-xs font-semibold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full font-label">
@@ -114,7 +51,7 @@ export default function ExplorerView() {
       const data = await fetchSources();
       setSources(data.sources);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load sources");
+      setError(err instanceof Error ? err.message : "No se pudieron cargar las fuentes");
     } finally {
       setLoading(false);
     }
@@ -129,21 +66,21 @@ export default function ExplorerView() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-on-surface font-headline">Explore Resources</h1>
+          <h1 className="text-3xl font-bold text-on-surface font-headline">Explorar recursos</h1>
           <p className="text-on-surface-variant mt-2 font-body">
-            Browse indexed study materials — PDFs and Jupyter Notebooks.
+            Navega los materiales de estudio indexados — PDFs y notebooks de Jupyter.
           </p>
         </div>
         <button
           onClick={loadSources}
           disabled={loading}
           className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0_4px_20px_rgba(42,52,57,0.04)] text-sm font-semibold text-on-surface hover:text-primary transition-colors font-body disabled:opacity-50"
-          title="Refresh"
+          title="Actualizar"
         >
           <span className={`material-symbols-outlined text-lg ${loading ? "animate-spin" : ""}`}>
             refresh
           </span>
-          Refresh
+          Actualizar
         </button>
       </div>
 
@@ -153,7 +90,7 @@ export default function ExplorerView() {
           <div>
             <p className="text-2xl font-bold text-on-surface font-headline">{sources.length}</p>
             <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest font-label">
-              Sources
+              Fuentes
             </p>
           </div>
           <div className="w-px bg-outline-variant/20" />
@@ -174,7 +111,7 @@ export default function ExplorerView() {
           <div>
             <p className="text-2xl font-bold text-on-surface font-headline">{totalChunks}</p>
             <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest font-label">
-              Total Chunks
+              Fragmentos totales
             </p>
           </div>
         </div>
@@ -184,7 +121,7 @@ export default function ExplorerView() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-24 text-on-surface-variant gap-4">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium font-body">Loading sources…</p>
+          <p className="text-sm font-medium font-body">Cargando fuentes…</p>
         </div>
       )}
 
@@ -192,16 +129,11 @@ export default function ExplorerView() {
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-error-container/30 flex items-center justify-center">
-            <span
-              className="material-symbols-outlined text-3xl text-error"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              error
-            </span>
+            <MaterialIcon name="error" filled className="text-3xl text-error" />
           </div>
           <div>
             <p className="text-sm font-semibold text-on-surface font-body">
-              Could not load sources
+              No se pudieron cargar las fuentes
             </p>
             <p className="text-xs text-outline-variant mt-1 font-body">{error}</p>
           </div>
@@ -209,7 +141,7 @@ export default function ExplorerView() {
             onClick={loadSources}
             className="mt-2 px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity font-body"
           >
-            Try again
+            Reintentar
           </button>
         </div>
       )}
@@ -224,10 +156,10 @@ export default function ExplorerView() {
           </div>
           <div>
             <p className="text-sm font-semibold text-on-surface-variant font-body">
-              No sources indexed yet
+              Aún no hay fuentes indexadas
             </p>
             <p className="text-xs text-outline-variant mt-1 font-body">
-              Upload PDFs or notebooks from the Admin panel to get started.
+              Sube PDFs o notebooks desde el panel Admin para empezar.
             </p>
           </div>
         </div>
@@ -245,7 +177,7 @@ export default function ExplorerView() {
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {pdfs.map((source) => (
-              <SourceCard key={source.source_file} source={source} />
+              <SourceCard key={source.source_file} source={source} variant="card" />
             ))}
           </div>
         </section>
@@ -256,14 +188,14 @@ export default function ExplorerView() {
         <section>
           <SectionHeader
             icon="code_blocks"
-            label="Notebooks — Labs"
+            label="Notebooks — Prácticas"
             count={notebooks.length}
             colorClass="text-on-primary-container"
             bgClass="bg-primary-container/50"
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {notebooks.map((source) => (
-              <SourceCard key={source.source_file} source={source} />
+              <SourceCard key={source.source_file} source={source} variant="card" />
             ))}
           </div>
         </section>

@@ -71,6 +71,9 @@ pnpm-debug.log*
 out/
 build/
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Vercel
 .vercel
 

@@ -4,10 +4,9 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { summaryApi, quizApi, QueryResponse, QuizItem } from "@/lib/api";
-
-function stripThinkTags(text: string): string {
-  return text.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
-}
+import { MaterialIcon } from "@/components/shared/MaterialIcon";
+import { ThinkingIndicator } from "@/components/shared/ThinkingIndicator";
+import { stripThinkTags } from "@/lib/utils";
 
 // ─── FlashCard ────────────────────────────────────────────────────────
 
@@ -33,13 +32,11 @@ function FlashCard({ item, index }: { item: QuizItem; index: number }) {
     if (!selected) return null;
     if (isCorrect(opt))
       return (
-        <span className="material-symbols-outlined text-[18px] text-[#1a5c2e] shrink-0"
-          style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        <MaterialIcon name="check_circle" filled className="text-[18px] text-[#1a5c2e] shrink-0" />
       );
     if (isSelected(opt))
       return (
-        <span className="material-symbols-outlined text-[18px] text-[#8b1a1a] shrink-0"
-          style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>
+        <MaterialIcon name="cancel" filled className="text-[18px] text-[#8b1a1a] shrink-0" />
       );
     return null;
   }
@@ -141,34 +138,10 @@ export default function StudyView() {
     }
   }
 
-  function ThinkingIndicator() {
-    return (
-      <div className="flex justify-center my-12 animate-[fadeSlideUp_0.3s_ease] w-full">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center animate-pulse shadow-lg">
-            <span
-              className="material-symbols-outlined text-primary text-2xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              school
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-on-surface-variant font-body font-medium text-sm">
-            <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:0ms]" />
-              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:300ms]" />
-            </div>
-            <span className="ml-2">
-              {activeTab === "summary"
-                ? "Consultando la bibliografía y resumiendo..."
-                : "Diseñando quiz interactivo basado en las lecturas..."}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const thinkingMessage =
+    activeTab === "summary"
+      ? "Consultando la bibliografía y resumiendo…"
+      : "Diseñando quiz interactivo basado en las lecturas…";
 
   const hasFlashcards =
     activeTab === "quiz" &&
@@ -179,7 +152,7 @@ export default function StudyView() {
     <div className="flex-1 overflow-y-auto p-6 md:p-12 flex flex-col items-center pb-12">
       <div className="w-full max-w-3xl mb-8 flex flex-col items-center text-center gap-3">
         <h1 className="text-3xl font-headline font-black text-on-surface">
-          Study Center
+          Centro de estudio
         </h1>
         <p className="text-on-surface-variant font-body">
           Ingresa una materia (ej: Redes Neuronales) para generar un resumen
@@ -199,7 +172,7 @@ export default function StudyView() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleGenerate("summary");
+            if (e.key === "Enter") handleGenerate(activeTab);
           }}
         />
         <div className="flex gap-2">
@@ -231,7 +204,11 @@ export default function StudyView() {
       )}
 
       {/* Loading state */}
-      {isLoading && <ThinkingIndicator />}
+      {isLoading && (
+        <div className="my-12 w-full flex justify-center">
+          <ThinkingIndicator message={thinkingMessage} />
+        </div>
+      )}
 
       {/* Result Area */}
       {response && !isLoading && (
@@ -247,7 +224,7 @@ export default function StudyView() {
             </div>
 
             {/* Flashcards (quiz con JSON estructurado) */}
-            {hasFlashcards ? (
+            {hasFlashcards && response.quiz_items ? (
               <div className="space-y-4">
                 <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest font-label mb-6">
                   {response.quiz_items.length} preguntas — selecciona una alternativa para ver si acertaste

@@ -4,12 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { studyApi, QueryResponse, CitationItem, RelatedLab } from "@/lib/api";
 import remarkGfm from "remark-gfm";
-
-
-// Strip <think>...</think> blocks from LLM responses (model reasoning traces)
-function stripThinkTags(text: string): string {
-  return text.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
-}
+import { MaterialIcon } from "@/components/shared/MaterialIcon";
+import { ThinkingIndicator } from "@/components/shared/ThinkingIndicator";
+import { stripThinkTags, timeLabel } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface Message {
@@ -22,11 +19,6 @@ interface Message {
   confidence?: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────
-function timeLabel(d: Date) {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
 // ─── Sub-components ──────────────────────────────────────────────────
 
 function UserBubble({ msg }: { msg: Message }) {
@@ -36,7 +28,7 @@ function UserBubble({ msg }: { msg: Message }) {
         <p className="text-on-surface leading-relaxed font-body">{msg.content}</p>
       </div>
       <span className="text-[10px] text-outline-variant mt-2 px-1 font-label font-medium uppercase tracking-wider">
-        You • {timeLabel(msg.timestamp)}
+        Tú • {timeLabel(msg.timestamp)}
       </span>
     </div>
   );
@@ -47,12 +39,7 @@ function AssistantBubble({ msg }: { msg: Message }) {
     <div className="flex flex-col items-start animate-[fadeSlideUp_0.3s_ease]">
       <div className="flex items-start gap-4 max-w-[90%]">
         <div className="mt-1 w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
-          <span
-            className="material-symbols-outlined text-primary text-lg"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            auto_awesome
-          </span>
+          <MaterialIcon name="auto_awesome" filled className="text-primary text-lg" />
         </div>
 
         <div className="bg-tertiary-container/40 backdrop-blur-sm p-6 rounded-3xl rounded-tl-none border border-white/50">
@@ -72,7 +59,7 @@ function AssistantBubble({ msg }: { msg: Message }) {
           {msg.confidence !== undefined && (
             <div className="mt-4 flex items-center gap-2">
               <span className="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant">
-                Confidence
+                Confianza
               </span>
               <div className="h-1.5 w-24 bg-surface-container-high rounded-full overflow-hidden">
                 <div
@@ -100,7 +87,7 @@ function AssistantBubble({ msg }: { msg: Message }) {
               <summary className="flex items-center justify-between text-sm font-semibold text-primary/80 hover:text-primary transition-colors list-none">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">menu_book</span>
-                  {msg.citations.length} Citation{msg.citations.length > 1 ? "s" : ""}
+                  {msg.citations.length} {msg.citations.length === 1 ? "Cita" : "Citas"}
                 </div>
                 <span className="material-symbols-outlined text-sm group-open:rotate-180 transition-transform">
                   expand_more
@@ -118,7 +105,7 @@ function AssistantBubble({ msg }: { msg: Message }) {
                       {c.page && (
                         <>
                           <span className="text-outline mx-1">•</span>
-                          Page {c.page}
+                          Página {c.page}
                         </>
                       )}
                     </div>
@@ -135,7 +122,7 @@ function AssistantBubble({ msg }: { msg: Message }) {
           {msg.related_labs && msg.related_labs.length > 0 && (
             <div className="mt-6 pt-6 border-t border-primary/10">
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-3">
-                Related Practice Materials
+                Material de práctica relacionado
               </span>
               <div className="flex flex-wrap gap-2">
                 {msg.related_labs.map((lab, i) => (
@@ -153,35 +140,8 @@ function AssistantBubble({ msg }: { msg: Message }) {
         </div>
       </div>
       <span className="text-[10px] text-outline-variant mt-2 ml-12 font-label font-medium uppercase tracking-wider">
-        AI Assistant • {timeLabel(msg.timestamp)}
+        Asistente • {timeLabel(msg.timestamp)}
       </span>
-    </div>
-  );
-}
-
-function ThinkingIndicator() {
-  return (
-    <div className="flex flex-col items-start animate-[fadeSlideUp_0.3s_ease]">
-      <div className="flex items-start gap-4">
-        <div className="mt-1 w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
-          <span
-            className="material-symbols-outlined text-primary text-lg animate-pulse"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            auto_awesome
-          </span>
-        </div>
-        <div className="bg-tertiary-container/40 backdrop-blur-sm p-6 rounded-3xl rounded-tl-none border border-white/50">
-          <div className="flex items-center gap-3 text-on-surface-variant font-body text-sm">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:0ms]" />
-              <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:300ms]" />
-            </div>
-            Searching documents and generating answer…
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -190,18 +150,13 @@ function EmptyState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center px-6 select-none">
       <div className="bg-primary-container/30 p-5 rounded-2xl mb-6">
-        <span
-          className="material-symbols-outlined text-primary text-5xl"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          school
-        </span>
+        <MaterialIcon name="school" filled className="text-primary text-5xl" />
       </div>
       <h2 className="text-2xl font-headline font-black text-on-surface mb-2">
-        Ask me anything about your courses
+        Pregúntame lo que quieras sobre tus cursos
       </h2>
       <p className="text-on-surface-variant font-body max-w-md leading-relaxed">
-        I'll search through your uploaded PDFs and notebooks to give you grounded answers with citations.
+        Buscaré en tus PDFs y notebooks para darte respuestas fundamentadas con citas.
       </p>
     </div>
   );
@@ -281,9 +236,9 @@ export default function ChatView() {
   }
 
   const quickActions = [
-    { icon: "lightbulb", label: "Summarize this topic", prompt: "Give me a summary of the main topics in my course materials" },
-    { icon: "format_list_bulleted", label: "Create a study plan", prompt: "Create a study plan based on my course materials" },
-    { icon: "edit_note", label: "Generate flashcards", prompt: "Generate flashcards for the key concepts in my materials" },
+    { icon: "lightbulb", label: "Resumir este tema", prompt: "Dame un resumen de los temas principales en mis materiales del curso" },
+    { icon: "format_list_bulleted", label: "Crear un plan de estudio", prompt: "Crea un plan de estudio basado en mis materiales del curso" },
+    { icon: "edit_note", label: "Generar flashcards", prompt: "Genera flashcards para los conceptos clave de mis materiales" },
   ];
 
   return (
@@ -314,7 +269,7 @@ export default function ChatView() {
             <div className="bg-error-container text-on-error-container px-5 py-3 rounded-2xl text-sm font-medium flex items-center gap-3 shadow-lg max-w-lg">
               <span className="material-symbols-outlined text-lg">error</span>
               <div>
-                <p className="font-semibold">Failed to get a response</p>
+                <p className="font-semibold">No se pudo obtener respuesta</p>
                 <p className="text-xs opacity-80 mt-0.5">{error}</p>
               </div>
               <button
@@ -350,7 +305,7 @@ export default function ChatView() {
             <div className="relative flex-shrink-0 self-center hidden sm:block">
               <select 
                 value={level} 
-                onChange={(e) => setLevel(e.target.value as any)}
+                onChange={(e) => setLevel(e.target.value as "básico" | "intermedio" | "avanzado")}
                 className="appearance-none bg-surface-container-high hover:bg-surface-container-highest cursor-pointer text-xs font-bold font-label uppercase tracking-widest text-on-surface-variant px-4 py-2.5 rounded-full border border-transparent outline-none transition-colors"
                 disabled={isLoading}
               >
