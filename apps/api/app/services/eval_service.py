@@ -2,7 +2,7 @@ import json
 from app.schemas.eval import EvalRequest, EvalResponse, MetricScore
 from packages.rag_core.src.retrieval.retriever import retrieve_documents
 from packages.rag_core.src.retrieval.filters import build_where_filter
-from packages.rag_core.src.pipeline import answer_question
+from packages.rag_core.src.prompts.answer_prompt import build_answer_prompt
 from packages.rag_core.src.prompts.eval_prompt import build_eval_prompt
 from packages.rag_core.src.llm.client import generate_answer
 
@@ -12,9 +12,9 @@ async def run_eval(request: EvalRequest) -> EvalResponse:
     where_filter = build_where_filter(module=request.module)
     docs = retrieve_documents(question=request.question, top_k=5, where_filter=where_filter)
 
-    # 2. Generar respuesta con el pipeline
-    pipeline_result = answer_question(question=request.question, module=request.module)
-    generated_answer = pipeline_result["answer"]
+    # 2. Generar respuesta directamente (sin pasar por el grafo — eval usa pipeline RAG simple)
+    answer_prompt = build_answer_prompt(question=request.question, docs=docs)
+    generated_answer = generate_answer(answer_prompt)
 
     # 3. Evaluar con LLM-as-judge
     eval_prompt = build_eval_prompt(

@@ -2,7 +2,6 @@ from app.schemas.study import StudyRequest
 from app.schemas.query import QueryResponse
 from app.adapters.state_to_response import to_query_response
 from packages.rag_core.src.graph.study_graph import get_study_graph
-from packages.rag_core.src.pipeline import quiz_question
 
 
 class StudyOrchestrator:
@@ -20,24 +19,28 @@ class StudyOrchestrator:
         final_state = self._graph.invoke(initial_state)
         return to_query_response(final_state)
 
+    def run_as_quiz(self, request: StudyRequest) -> QueryResponse:
+        # Fuerza intent="quiz" para saltarse el clasificador.
+        initial_state = {
+            "question": request.question,
+            "level": request.level,
+            "module": request.module,
+            "difficulty": request.difficulty,
+            "intent": "quiz",
+        }
+        final_state = self._graph.invoke(initial_state)
+        return to_query_response(final_state)
+
 
 def get_orchestrator() -> StudyOrchestrator:
     return StudyOrchestrator(graph=get_study_graph())
 
 
-# Wrappers de compatibilidad para no romper otros callers (Fase 6 los migra).
-
 async def run_study(request: StudyRequest) -> QueryResponse:
     return get_orchestrator().run(request)
 
 
-async def run_quiz(request: StudyRequest) -> QueryResponse:
-    # El endpoint /quiz es explícito: siempre genera un quiz sin pasar por el clasificador.
-    result = quiz_question(
-        question=request.question,
-        level=request.level,
-        module=request.module,
-        difficulty=request.difficulty,
-        top_k=4
-    )
-    return QueryResponse(**result)
+async def run_quiz(request: StudyRequest, orch: StudyOrchestrator = None) -> QueryResponse:
+    # Fuerza intent="quiz" en el grafo, sin pasar por el clasificador.
+    orchestrator = orch or get_orchestrator()
+    return orchestrator.run_as_quiz(request)

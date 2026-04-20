@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     CHAT_MODEL: str = "gpt-4.1-mini"
     VECTOR_BACKEND: str = "chroma"
     CHROMA_PATH: str = "/data/indexes/chroma"
-    USE_GRAPH_FOR_QUERY: bool = True
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",

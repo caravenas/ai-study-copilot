@@ -4,7 +4,7 @@ from app.schemas.study import StudyRequest
 from app.schemas.query import QueryResponse
 from app.services.study_service import StudyOrchestrator, get_orchestrator, run_quiz
 
-from packages.rag_core.src.pipeline import summary_module
+from packages.rag_core.src.services.summary import summary_module
 
 router = APIRouter()
 
@@ -18,8 +18,11 @@ def study_endpoint(
 
 
 @router.post("/quiz", response_model=QueryResponse)
-async def quiz_endpoint(request: StudyRequest):
-    return await run_quiz(request)
+async def quiz_endpoint(
+    request: StudyRequest,
+    orch: StudyOrchestrator = Depends(get_orchestrator),
+):
+    return await run_in_threadpool(run_quiz, request, orch)
 
 
 @router.get("/summary/{module}", response_model=QueryResponse)
