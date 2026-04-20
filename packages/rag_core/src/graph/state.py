@@ -1,25 +1,37 @@
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, NotRequired
 
-class StudyState(TypedDict):
-    # Input (dado por el Usuario/API)
+
+class StudyState(TypedDict, total=False):
+    # Input (dado por el usuario/API) — semánticamente inmutables tras el inicio
     question: str
     level: str
     module: str | None
 
-    # Router(lo pone el nodo clasificador)
+    # Router (lo pone classify_intent)
     intent: Literal["teoria", "codigo", "quiz"]
 
-    # RAG (lo pone el nodo de retrieval)
+    # CRAG: query reescrita por rewrite_query (question permanece intacta)
+    rewritten_query: str | None
+
+    # RAG (lo pone retrieve_context)
     docs: list[dict]
 
-    # NUEVO: resultado del grader y contador de reintentos
+    # Grader y contador de reintentos
     docs_relevant: bool
     retrieval_attempts: int
 
-    # Output (lo pone el agente especializado)
+    # Output del agente especializado
     answer: str
-    citations: list[dict]
     confidence: float
     related_labs: list[dict]
 
-    
+    # Citas construidas por synthesize_response (vía build_answer_response)
+    # Fase 4 podrá leerlas directamente del state si conviene.
+    citations: list[dict]
+
+    # Campos estructurados para coder_agent (se llenarán en Fase 3)
+    code: str | None
+    language: str | None
+
+    # Campos estructurados para quiz_agent (se llenarán en Fase 3)
+    quiz_items: list

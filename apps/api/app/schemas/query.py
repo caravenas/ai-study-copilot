@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=3)
@@ -34,3 +34,6 @@ class QueryResponse(BaseModel):
     related_labs: List[RelatedLab] = []
     confidence: float
     quiz_items: List[QuizItem] = []
+    intent: Optional[Literal["teoria", "codigo", "quiz"]] = None
+    code: Optional[str] = None
+    language: Optional[str] = None

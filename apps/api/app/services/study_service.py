@@ -1,21 +1,34 @@
 from app.schemas.study import StudyRequest
 from app.schemas.query import QueryResponse
-from packages.rag_core.src.graph.study_graph import study_graph
+from app.adapters.state_to_response import to_query_response
+from packages.rag_core.src.graph.study_graph import get_study_graph
 from packages.rag_core.src.pipeline import quiz_question
 
 
+class StudyOrchestrator:
+    def __init__(self, graph):
+        self._graph = graph
+
+    def run(self, request) -> QueryResponse:
+        # Normaliza tanto StudyRequest (tiene level) como QueryRequest (no tiene level).
+        initial_state = {
+            "question": request.question,
+            "level": getattr(request, "level", "intermedio"),
+            "module": request.module,
+            "difficulty": getattr(request, "difficulty", None),
+        }
+        final_state = self._graph.invoke(initial_state)
+        return to_query_response(final_state)
+
+
+def get_orchestrator() -> StudyOrchestrator:
+    return StudyOrchestrator(graph=get_study_graph())
+
+
+# Wrappers de compatibilidad para no romper otros callers (Fase 6 los migra).
+
 async def run_study(request: StudyRequest) -> QueryResponse:
-    result = study_graph.invoke({
-        "question": request.question,
-        "level": request.level,
-        "module": request.module,
-    })
-    return QueryResponse(
-        answer=result["answer"],
-        citations=result.get("citations", []),
-        related_labs=result.get("related_labs", []),
-        confidence=result.get("confidence", 0.0),
-    )
+    return get_orchestrator().run(request)
 
 
 async def run_quiz(request: StudyRequest) -> QueryResponse:

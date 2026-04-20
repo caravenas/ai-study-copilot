@@ -37,7 +37,7 @@ def build_study_graph():
     graph.add_node("coder_agent", coder_agent)
     graph.add_node("quiz_agent", quiz_agent)
     graph.add_node("synthesize_response", synthesize_response)
-    
+
     # 1.1 Nodos para CRAG
     graph.add_node("grade_documents", grade_documents)
     graph.add_node("rewrite_query", rewrite_query)
@@ -73,5 +73,13 @@ def build_study_graph():
     # 5. Compilar
     return graph.compile()
 
-# Singleton: compilar una vez, reusar siempre
-study_graph = build_study_graph()
+
+# Lazy singleton: el grafo se construye solo cuando se necesita por primera vez.
+# Así el import del módulo no dispara conexiones a Chroma/OpenAI/MiniMax.
+_graph = None
+
+def get_study_graph():
+    global _graph
+    if _graph is None:
+        _graph = build_study_graph()
+    return _graph

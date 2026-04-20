@@ -1,16 +1,9 @@
 from packages.rag_core.src.llm.client import generate_answer
 from packages.rag_core.src.graph.state import StudyState
 
-from packages.rag_core.src.retrieval.retriever import retrieve_documents
-from packages.rag_core.src.retrieval.filters import build_where_filter
-
-from packages.rag_core.src.prompts.study_prompt import build_study_prompt
-from packages.rag_core.src.prompts.coder_prompt import build_coder_prompt
-from packages.rag_core.src.prompts.quiz_prompt import build_quiz_prompt
-
-from packages.rag_core.src.synthesis.answer_builder import build_answer_response
-from packages.rag_core.src.vectorstore.chroma_store import get_notebook_chunks
-from packages.rag_core.src.linking.lab_linker import find_related_labs
+from packages.rag_core.src.services.retrieval import build_where_filter, retrieve
+from packages.rag_core.src.services.synthesis import build_answer_response, find_related_labs
+from packages.rag_core.src.services.agents import run_tutor, run_coder, run_quiz
 
 
 ROUTER_PROMPT = """Clasifica la intención de esta pregunta de un estudiante.
@@ -57,44 +50,54 @@ def classify_intent(state: StudyState) -> dict:
     intent = raw if raw in ("teoria", "codigo", "quiz") else "teoria"
 
     return {"intent": intent}
-    
+
+
 def retrieve_context(state: StudyState) -> dict:
-    """Nodo RAG: busca documentos relevantes en ChromaDB."""
+    """Nodo RAG: busca documentos relevantes en ChromaDB.
+
+    Usa rewritten_query si existe (tras un rewrite_query), de lo contrario
+    usa la pregunta original para no perder el intent del usuario.
+    """
     where_filter = build_where_filter(module=state.get("module"))
-    docs = retrieve_documents(question=state["question"],top_k=5, where_filter=where_filter)
-    
+    query = state.get("rewritten_query") or state["question"]
+    docs = retrieve(question=query, filters=where_filter, k=5)
+
     return {"docs": docs}
+
 
 def tutor_agent(state: StudyState) -> dict:
     """Agente Teórico: explica conceptos al nivel del estudiante."""
-    sys_prompt = build_study_prompt(docs=state["docs"], level=state["level"])
-    user_msg = f"Profesor, tengo esta duda: '{state['question']}'"
-    answer = generate_answer(prompt=user_msg, system_prompt=sys_prompt)
+    answer = run_tutor(question=state["question"], docs=state["docs"], level=state["level"])
     return {"answer": answer}
 
 
 def coder_agent(state: StudyState) -> dict:
-    """Agente de Código: resuelve preguntas de implementación."""
-    sys_prompt = build_coder_prompt(docs=state["docs"], level=state["level"])
-    user_msg = f"Necesito ayuda con: '{state['question']}'"
-    answer = generate_answer(prompt=user_msg, system_prompt=sys_prompt)
-    return {"answer": answer}
+    """Agente de Código: resuelve preguntas de implementación.
+
+    Retorna answer (Markdown completo), code y language extraídos del
+    primer fenced code-block. Si no hay code-block, code y language son None.
+    """
+    result = run_coder(question=state["question"], docs=state["docs"], level=state["level"])
+    return {"answer": result["answer"], "code": result["code"], "language": result["language"]}
+
 
 def quiz_agent(state: StudyState) -> dict:
-    """Agente Quiz: genera evaluaciones interactivas."""
-    sys_prompt = build_quiz_prompt(docs=state["docs"], level=state["level"])
-    user_msg = f"Hazme un quiz de 3 preguntas sobre: '{state['question']}'"
-    answer = generate_answer(prompt=user_msg, system_prompt=sys_prompt)
-    return {"answer": answer}
+    """Agente Quiz: genera evaluaciones interactivas.
+
+    Retorna answer (texto crudo del LLM) y quiz_items (lista parseada).
+    Si el parseo JSON falla, quiz_items es [].
+    """
+    result = run_quiz(question=state["question"], docs=state["docs"], level=state["level"])
+    return {"answer": result["answer"], "quiz_items": result["quiz_items"]}
 
 
 def synthesize_response(state: StudyState) -> dict:
     """Nodo final: ensambla la respuesta con citations y labs."""
-    notebook_docs = get_notebook_chunks()
-    related_labs = find_related_labs(state["docs"], notebook_docs)
+    related_labs = find_related_labs(state["docs"])
     response = build_answer_response(state["answer"], state["docs"])
     response["related_labs"] = related_labs
     return response
+
 
 def grade_documents(state: StudyState) -> dict:
     docs = state["docs"]
@@ -120,13 +123,19 @@ def grade_documents(state: StudyState) -> dict:
 
 
 def rewrite_query(state: StudyState) -> dict:
-    """Reformula la query si los docs no fueron relevantes."""
+    """Reformula la query si los docs no fueron relevantes.
+
+    Escribe la versión reescrita en rewritten_query para preservar
+    state["question"] como la pregunta original del usuario.
+    """
+    # Siempre reformula desde la pregunta original, no desde una reescritura previa
     prompt = REWRITE_PROMPT.format(question=state["question"])
-    new_question = generate_answer(prompt).strip()
+    rewritten = generate_answer(prompt).strip()
     return {
-        "question": new_question,
+        "rewritten_query": rewritten,
         "retrieval_attempts": state.get("retrieval_attempts", 0) + 1,
     }
+
 
 def handle_no_context(state: StudyState) -> dict:
     """Fallback cuando tras los reintentos no se encontró contexto relevante."""
