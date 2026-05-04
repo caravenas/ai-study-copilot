@@ -43,6 +43,11 @@ PREGUNTA ORIGINAL: {question}"""
 
 def classify_intent(state: StudyState) -> dict:
     """Nodo Router: clasifica la pregunta en una intención."""
+    preset_intent = state.get("intent")
+    if preset_intent in ("teoria", "codigo", "quiz"):
+        # Permite que endpoints especializados (ej. /study/quiz) fuercen ruta.
+        return {"intent": preset_intent}
+
     prompt = ROUTER_PROMPT.format(question=state["question"])
     raw = generate_answer(prompt).strip().lower()
 

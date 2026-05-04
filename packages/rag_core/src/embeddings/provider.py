@@ -6,13 +6,16 @@ EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 EMBED_BATCH_SIZE = 100
-# text-embedding-3-small: max 8192 tokens. Worst case (dense numeric content): 1 char = 1 token.
-# Using 7500 to guarantee we stay under the limit for any type of content.
+# text-embedding-3-small: max 8192 tokens. Peor caso (contenido numérico denso): 1 carácter = 1 token.
+# aplica un recorte preventivo a cada texto a 7,500 caracteres
 MAX_CHARS_PER_CHUNK = 7_500
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
+    # aplica un recorte preventivo a cada texto a 7,500 caracteres
     safe_texts = [t[:MAX_CHARS_PER_CHUNK] for t in texts]
     all_embeddings: list[list[float]] = []
+    
+    # se itera en lotes de 100 textos para enviar a OpenAI
     for i in range(0, len(safe_texts), EMBED_BATCH_SIZE):
         batch = safe_texts[i : i + EMBED_BATCH_SIZE]
         response = client.embeddings.create(

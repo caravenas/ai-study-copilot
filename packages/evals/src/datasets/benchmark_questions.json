@@ -1,0 +1,62 @@
+[
+  {
+    "question": "¿Qué es overfitting y cómo se puede reducir?",
+    "module": "deep-learning",
+    "difficulty": "intermedio",
+    "expected_topics": ["overfitting", "regularization", "dropout", "early_stopping"]
+  },
+  {
+    "question": "¿Cuál es la diferencia entre CNN y RNN?",
+    "module": "deep-learning",
+    "difficulty": "intermedio",
+    "expected_topics": ["cnn", "rnn"]
+  },
+  {
+    "question": "Explica qué hace la función de activación ReLU.",
+    "module": "deep-learning",
+    "difficulty": "básico",
+    "expected_topics": ["activation_function"]
+  },
+  {
+    "question": "¿Para qué sirve batch normalization?",
+    "module": "deep-learning",
+    "difficulty": "intermedio",
+    "expected_topics": ["batch_normalization"]
+  },
+  {
+    "question": "¿Qué es transfer learning y cuándo conviene usarlo?",
+    "module": "deep-learning",
+    "difficulty": "intermedio",
+    "expected_topics": ["transfer_learning", "fine_tuning"]
+  },
+  {
+    "question": "¿Cuál es el rol del learning rate en entrenamiento?",
+    "module": "deep-learning",
+    "difficulty": "básico",
+    "expected_topics": ["learning_rate", "optimizer"]
+  },
+  {
+    "question": "Explica la diferencia entre aprendizaje supervisado y no supervisado.",
+    "module": "machine-learning",
+    "difficulty": "básico",
+    "expected_topics": ["supervised_learning", "unsupervised_learning"]
+  },
+  {
+    "question": "¿Qué es backpropagation?",
+    "module": "deep-learning",
+    "difficulty": "intermedio",
+    "expected_topics": ["backpropagation", "gradient_descent"]
+  },
+  {
+    "question": "¿Qué problema resuelve la atención en Transformers?",
+    "module": "nlp",
+    "difficulty": "avanzado",
+    "expected_topics": ["transformer", "attention"]
+  },
+  {
+    "question": "¿Qué significa data augmentation en visión computacional?",
+    "module": "computer-vision",
+    "difficulty": "intermedio",
+    "expected_topics": ["data_augmentation", "computer_vision"]
+  }
+]

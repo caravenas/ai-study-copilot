@@ -173,8 +173,17 @@ curl -X POST http://localhost:8000/api/ingest
 
 ## Problemas conocidos
 
-- `packages/rag_core/src/prompts/coder_prompt.py` está incompleto; el modo `coder_agent` del grafo LangGraph aún no es funcional end-to-end.
-- La API usa el pipeline directo (`packages.rag_core.src.pipeline`) — el grafo LangGraph todavía no está enganchado al router.
+- El modo `coder_agent` del grafo LangGraph está operativo pero requiere refinamiento en el parseo de bloques de código complejos.
+- La evaluación de respuestas (módulo `evals`) está en fase inicial de implementación.
+
+---
+
+## Estado del Proyecto
+
+El sistema ha evolucionado de un pipeline lineal a una **arquitectura basada en grafos (LangGraph)** que soporta:
+- **Corrective RAG (CRAG)**: Evaluación de relevancia y reescritura de queries.
+- **Multi-agente**: Ruteo inteligente entre tutoría teórica, asistencia en código y generación de quizzes.
+- **Citas automáticas**: Grounding verificado con metadatos de fuentes originales.
 
 ---
 
